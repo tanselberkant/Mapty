@@ -2,6 +2,7 @@
 class Workout {
   date = new Date();
   id = (Date.now() + '').slice(-10);
+  clicks = 0;
 
   constructor(coords, distance, duration) {
     this.coords = coords; // [lat, lng]
@@ -15,6 +16,9 @@ class Workout {
     this.description = `${this.type[0].toUpperCase()}${this.type.slice(1)} on ${
       months[this.date.getMonth()]
     } ${this.date.getDate()}`;
+  }
+  click() {
+    this.clicks++;
   }
 }
 
@@ -68,6 +72,11 @@ class App {
   constructor() {
     // Get User's location
     this._getPosition();
+
+    // Get data from localStorage
+    this._getLocalStorage();
+
+    //Attach event handlers
     form.addEventListener('submit', this._newWorkout.bind(this));
     inputType.addEventListener('change', this._toggleElevationField);
     containerWorkouts.addEventListener('click', this._moveToPopup.bind(this));
@@ -102,6 +111,11 @@ class App {
 
     // Handling clicks on map
     this.#map.on('click', this._showForm.bind(this));
+
+    // Rendering markers which we get from localStorage
+    this.#workouts.forEach(work => {
+      this._renderWorkoutMarker(work);
+    });
   }
 
   _showForm(mapE) {
@@ -183,6 +197,9 @@ class App {
 
     // Hide Form + Clear Input Fields
     this._hideForm();
+
+    // Set local storage
+    this._setLocalStorage();
   }
 
   _renderWorkoutMarker(workout) {
@@ -250,7 +267,7 @@ class App {
         </div>
       </li>
       `;
-
+    console.log(workout.elevationGain);
     form.insertAdjacentHTML('afterend', html);
   }
 
@@ -269,6 +286,28 @@ class App {
         duration: 1,
       },
     });
+    // using the oublic interface
+    // workout.click();
+  }
+  _setLocalStorage() {
+    localStorage.setItem('workouts', JSON.stringify(this.#workouts));
+  }
+
+  _getLocalStorage() {
+    const data = JSON.parse(localStorage.getItem('workouts'));
+    // console.log(data);
+
+    if (!data) return;
+    this.#workouts = data;
+
+    this.#workouts.forEach(work => {
+      this._renderWorkout(work);
+      // this._renderWorkoutMarker(work); // Not working because map loading slower than this. It is not defined yet
+    });
+  }
+  reset() {
+    localStorage.removeItem('workouts');
+    location.reload();
   }
 }
 
